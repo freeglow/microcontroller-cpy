@@ -1,0 +1,1 @@
+./adafruit-nrfutil-macos --verbose dfu serial --package feather_nrf52840_express_bootloader-0.3.2_s140_6.1.1.zip -p /dev/cu.usbmodem14201 -b 115200 --singlebank --touch 1200
