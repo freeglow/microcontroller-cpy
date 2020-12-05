@@ -17,18 +17,14 @@ from adafruit_ble.services.nordic import UARTService
 
 from brightness_packet import BrightnessPacket, SettingsRequestPacket
 
-# initialize bluetooth radio
-# ble = BLERadio()
-# ble.name = "A Glass Jar"
-# uart_service = UARTService()
-# uart_service.uuid = VendorUUID("622b6b5e-b514-4be9-81d4-e13ba87ba54f")
-# advertisement = ProvideServicesAdvertisement(uart_service)
-
 # initialize pixels
 board_pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0).show()
 pixels = neopixel.NeoPixel(
     board.D5, 7, brightness=0.05, auto_write=False, pixel_order=neopixel.RGBW
 )
+
+class FreeGlowService(UARTService):
+    uuid = VendorUUID("622b6b5e-b514-4be9-81d4-e13ba87ba54f")
 
 class Logger:
     def info(self, message):
@@ -41,7 +37,7 @@ logger = Logger()
 
 class Device:
     ble = BLERadio()
-    uart_service = UARTService()
+    ble_service = FreeGlowService()
 
     def __init__(self):
         save_config = False
@@ -52,7 +48,7 @@ class Device:
         except Exception as err:
             print('${0}'.format(err))
             self.config = {
-                "name": "A Glass Jar",
+                "name": "Cactus",
                 "color": (123, 20, 4),
                 "brightness": 20
             }
@@ -69,10 +65,11 @@ class Device:
         return self.ble.connected
     
     def advertise(self):
-        self.ble.start_advertising(ProvideServicesAdvertisement(self.uart_service))
+        self.ble.start_advertising(ProvideServicesAdvertisement(self.ble_service))
     
     def send_config(self):
-        self.uart_service.write(json.dumps(self.config))
+        # self.ble_service.write("!C10")
+        self.ble_service.write(json.dumps(self.config))
         logger.info('wrote the config to rx')
     
     def set_color(self, to_color, from_color = None, save = True):
@@ -129,8 +126,8 @@ class Device:
         while self.connected:
             # resets the board
             # microcontroller.reset()
-            if self.uart_service.in_waiting:
-                packet = Packet.from_stream(self.uart_service)
+            if self.ble_service.in_waiting:
+                packet = Packet.from_stream(self.ble_service)
                 if isinstance(packet, ColorPacket):
                     self.set_color(packet.color, self.config['color'])
                 elif isinstance(packet, BrightnessPacket):
